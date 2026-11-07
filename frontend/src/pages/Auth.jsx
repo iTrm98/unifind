@@ -4,6 +4,12 @@ import { fieldError } from '../api.js';
 import { homeFor, useAuth } from '../auth.jsx';
 import { Button, ButtonLink, Field, Hero, useToast } from '../components/ui.jsx';
 
+// Demo sign-in details shown under the form. Edit or empty this list to change them.
+const DEMO_ACCOUNTS = [
+  { label: 'Admin', email: 'admin@uqu.edu.sa', password: 'asd' },
+  { label: 'Student', email: 'student@uqu.edu.sa', password: 'asd' },
+];
+
 function allowedFor(user, path) {
   if (!path) return false;
   return user.role === 'admin' ? path.startsWith('/admin') : path.startsWith('/app');
@@ -87,6 +93,25 @@ export function Login() {
             </Field>
             <Button type="submit" className="min-h-[42px] w-full rounded-[6px] text-sm font-semibold" busy={busy} disabled={busy}>Sign in</Button>
           </form>
+
+          {DEMO_ACCOUNTS.length > 0 && (
+            <section aria-labelledby="demo-accounts" className="rounded-[6px] border border-[#d5e0e5] bg-white p-3">
+              <h2 id="demo-accounts" className="text-xs font-semibold tracking-[0.04em] text-[#445d69] uppercase">Demo accounts</h2>
+              <p className="mt-0.5 text-xs text-[#5b7280]">Choose one to fill in the form, then press Sign in.</p>
+              <ul className="mt-2 flex flex-col gap-2">
+                {DEMO_ACCOUNTS.map((account) => (
+                  <li key={account.email}>
+                    <button type="button"
+                      onClick={() => { setEmail(account.email); setPassword(account.password); setErrors({}); setFormError(''); }}
+                      className="flex min-h-11 w-full cursor-pointer flex-wrap items-center justify-between gap-x-3 gap-y-0.5 rounded-[6px] border border-[#d5e0e5] bg-[#f8fafb] px-3 py-2 text-left text-sm transition-colors hover:border-[#bdccd4] hover:bg-[#eef3f5]">
+                      <span className="font-semibold">{account.label}</span>
+                      <span className="min-w-0 break-all text-[#445d69]">{account.email} <span aria-hidden="true">/</span><span className="sr-only">, password</span> {account.password}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </main>
     </div>
