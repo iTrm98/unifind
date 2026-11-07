@@ -23,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureRole::class,
         ]);
 
+        // Render (and similar hosts) terminate HTTPS at a proxy: trust its
+        // X-Forwarded-* headers so generated URLs use https.
+        $middleware->trustProxies(at: '*');
+
         // Every API request is treated as a JSON request.
         $middleware->prependToGroup('api', ForceJsonResponse::class);
 

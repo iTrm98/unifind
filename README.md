@@ -92,3 +92,25 @@ The database is `unifind1` on 127.0.0.1:3306, user `root`.
 To look at it, open it in MySQL Workbench, or sign in as admin and use the Database page in the app.
 
 `php artisan migrate:fresh --seed` resets everything to just the two accounts, the categories and the locations.
+
+## Deploy
+
+The free setup is: frontend on GitHub Pages, API on Render, database on Aiven MySQL, photos on Cloudflare R2. Local development does not change.
+
+1. **GitHub.** Push the project to https://github.com/iTrm98/unifind. GitHub Pages on a private repository needs GitHub Pro (free with the GitHub Student Developer Pack); otherwise make the repository public.
+
+2. **Aiven (database).** Create the free MySQL service. From its overview page copy the host, port, user, password and database name. The CA certificate is already in the project at `backend/storage/certs/ca.pem`, so there is nothing to download.
+
+3. **Cloudflare R2 (photos).** Create a bucket and turn on public access for it (the `r2.dev` public URL). Then create an R2 API token with read and write access to that bucket. Copy the Access Key ID, the Secret Access Key, the S3 endpoint (`https://<account-id>.r2.cloudflarestorage.com`) and the bucket's public URL (`https://pub-....r2.dev`).
+
+4. **Render (API).** Create a New Web Service from the repository with root directory `backend`, language Docker and the Free instance type. Under Environment, add every variable from `backend/.env.production.example`:
+   - `APP_KEY`: run `php artisan key:generate --show` in `backend` and paste the output.
+   - `ADMIN_PASSWORD` and `STUDENT_PASSWORD`: strong new passwords, not the local ones.
+   - `DB_*`: the Aiven values from step 2. `MYSQL_ATTR_SSL_CA`: `/var/www/html/storage/certs/ca.pem`.
+   - `AWS_*`: the R2 values from step 3. `FRONTEND_URL`: `https://itrm98.github.io`. `SANCTUM_EXPIRATION`: `720`.
+
+   Deploy. Each start runs the migrations and the seeder, so the tables and the two accounts are created automatically. When the first deploy is done, set `APP_URL` to the Render URL (for example `https://unifind-api.onrender.com`) and deploy again. Check that `https://<render-url>/up` shows the green "Application up" page.
+
+5. **GitHub Pages (frontend).** In the repository open Settings > Pages and set Source to GitHub Actions. In Settings > Secrets and variables > Actions > Variables, add `VITE_API_URL` = `https://<render-url>/api`. Open the Actions tab, run "Deploy frontend to GitHub Pages" (it also runs on every push to `main` that changes `frontend/`), then open https://itrm98.github.io/unifind/.
+
+6. **Notes.** The free Render service sleeps when nobody uses it, so the first visit after a while can take about a minute. The free Aiven service can be powered off after a period of inactivity; turn it back on in the Aiven console.

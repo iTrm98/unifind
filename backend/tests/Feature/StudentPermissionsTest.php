@@ -146,4 +146,47 @@ class StudentPermissionsTest extends TestCase
         $this->putJson("/api/items/{$matched->id}", $this->itemPayload(['title' => 'Nope']))->assertStatus(403);
         $this->assertDatabaseMissing('items', ['title' => 'Nope']);
     }
+
+    public function test_photos_use_the_configured_uploads_disk(): void
+    {
+        config(['unifind.uploads_disk' => 's3']);
+        Storage::fake('public');
+        Storage::fake('s3', ['url' => 'https://pub-test.r2.dev']);
+        Sanctum::actingAs($this->student);
+
+        $created = $this->post('/api/items', $this->itemPayload([
+            'photo' => UploadedFile::fake()->image('first.png'),
+        ]))->assertCreated();
+
+        $item = \App\Models\Item::find($created->json('data.id'));
+        $first = $item->image_path;
+        Storage::disk('s3')->assertExists($first);
+        Storage::disk('public')->assertMissing($first);
+        $this->assertSame('https://pub-test.r2.dev/'.$first, $created->json('data.image_url'));
+
+        // Replacing the photo deletes the old one from the same disk.
+        $this->post("/api/items/{$item->id}", $this->itemPayload([
+            '_method' => 'PUT', 'photo' => UploadedFile::fake()->image('second.png'),
+        ]))->assertOk();
+        $second = $item->fresh()->image_path;
+        Storage::disk('s3')->assertMissing($first);
+        Storage::disk('s3')->assertExists($second);
+
+        // Removing it deletes it too.
+        $this->putJson("/api/items/{$item->id}", $this->itemPayload(['remove_image' => true]))->assertOk()
+            ->assertJsonPath('data.image_url', null);
+        Storage::disk('s3')->assertMissing($second);
+    }
+
+    public function test_local_photos_get_a_relative_storage_url(): void
+    {
+        Storage::fake('public');
+        Sanctum::actingAs($this->student);
+
+        $created = $this->post('/api/items', $this->itemPayload([
+            'photo' => UploadedFile::fake()->image('local.png'),
+        ]))->assertCreated();
+
+        $this->assertStringStartsWith('/storage/items/', $created->json('data.image_url'));
+    }
 }

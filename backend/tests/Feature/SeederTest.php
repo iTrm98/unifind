@@ -55,4 +55,18 @@ class SeederTest extends TestCase
 
         $this->seed(DatabaseSeeder::class);
     }
+
+    public function test_seeder_can_run_again_without_duplicating_rows(): void
+    {
+        config(['unifind.admin_password' => 'asd', 'unifind.student_password' => 'asd']);
+        $this->seed(DatabaseSeeder::class);
+        $counts = [User::count(), Category::count(), Location::count()];
+
+        config(['unifind.admin_password' => 'New-Admin-1', 'unifind.student_password' => 'New-Student-1']);
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertSame($counts, [User::count(), Category::count(), Location::count()]);
+        $this->assertTrue(Hash::check('New-Admin-1', User::where('email', 'admin@uqu.edu.sa')->value('password')));
+        $this->assertTrue(Hash::check('New-Student-1', User::where('email', 'student@uqu.edu.sa')->value('password')));
+    }
 }

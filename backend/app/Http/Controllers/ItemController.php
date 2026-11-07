@@ -80,7 +80,7 @@ class ItemController extends Controller
         $data['status'] = 'open';
 
         if ($request->hasFile('photo')) {
-            $data['image_path'] = $request->file('photo')->store('items', 'public');
+            $data['image_path'] = $request->file('photo')->store('items', Item::uploadsDisk());
         }
         unset($data['photo'], $data['remove_image']);
 
@@ -108,12 +108,12 @@ class ItemController extends Controller
 
         if ($request->boolean('remove_image') || $request->hasFile('photo')) {
             if ($item->image_path) {
-                Storage::disk('public')->delete($item->image_path);
+                Storage::disk(Item::uploadsDisk())->delete($item->image_path);
             }
             $data['image_path'] = null;
         }
         if ($request->hasFile('photo')) {
-            $data['image_path'] = $request->file('photo')->store('items', 'public');
+            $data['image_path'] = $request->file('photo')->store('items', Item::uploadsDisk());
         }
         unset($data['photo'], $data['remove_image']);
 

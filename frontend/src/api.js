@@ -3,7 +3,9 @@
 // - parses JSON and throws ApiError { message, status, errors }
 // - fires the global sign-out handler on 401
 
-const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+// VITE_API_URL may be given with or without the trailing /api; request paths
+// below already start with /api, so only the server origin is kept.
+const BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '').replace(/\/api$/, '');
 const TOKEN_KEY = 'unifind.token';
 
 export class ApiError extends Error {
@@ -34,7 +36,7 @@ export const token = {
   },
 };
 
-/** Turns a relative /storage path from the API into a usable URL. */
+/** Image URLs from the API are absolute (cloud storage) or relative /storage paths (local disk). */
 export function assetUrl(path) {
   if (!path) return null;
   return /^https?:\/\//.test(path) ? path : `${BASE}${path}`;

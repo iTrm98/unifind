@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Item extends Model
 {
@@ -86,9 +87,27 @@ class Item extends Model
         return $query;
     }
 
+    /** The disk item photos are stored on (UPLOADS_DISK). */
+    public static function uploadsDisk(): string
+    {
+        return (string) config('unifind.uploads_disk', 'public');
+    }
+
+    /**
+     * Relative /storage/... URL on the local public disk (the Vite proxy serves it),
+     * absolute URL on a cloud disk such as R2.
+     */
     public function imageUrl(): ?string
     {
-        return $this->image_path ? '/storage/'.ltrim($this->image_path, '/') : null;
+        if (! $this->image_path) {
+            return null;
+        }
+
+        $disk = self::uploadsDisk();
+
+        return $disk === 'public'
+            ? '/storage/'.ltrim($this->image_path, '/')
+            : Storage::disk($disk)->url($this->image_path);
     }
 
     public function canBeEditedBy(User $user): bool

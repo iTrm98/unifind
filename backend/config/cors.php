@@ -19,7 +19,11 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_filter([env('FRONTEND_URL', 'http://localhost:5173')]),
+    // FRONTEND_URL is one origin or a comma-separated list (origins only, no path).
+    'allowed_origins' => array_values(array_filter(array_map(
+        fn ($origin) => rtrim(trim($origin), '/'),
+        explode(',', (string) env('FRONTEND_URL', 'http://localhost:5173'))
+    ))),
 
     'allowed_origins_patterns' => [],
 

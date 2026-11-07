@@ -51,11 +51,16 @@ return [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
+            'region' => env('AWS_DEFAULT_REGION', 'auto'),
             'bucket' => env('AWS_BUCKET'),
+            // Public bucket URL (Cloudflare R2: https://pub-xxxx.r2.dev); used to build image URLs.
             'url' => env('AWS_URL'),
+            // R2 S3 API endpoint: https://<account-id>.r2.cloudflarestorage.com
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            // Only send checksums when S3 requires them (R2 compatibility).
+            'request_checksum_calculation' => 'when_required',
+            'response_checksum_validation' => 'when_required',
             'throw' => false,
             'report' => false,
         ],
